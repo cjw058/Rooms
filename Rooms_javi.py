@@ -99,7 +99,7 @@ def death():
     print(" u" + "$" * 4 + " " * 8 + "$")
 
 def createRooms():
-    global currentRoom
+    global currentRoom, r5
     r1 = Room("Room 1")
     r2 = Room("Room 2")
     r3 = Room("Room 3")
@@ -113,13 +113,13 @@ def createRooms():
     r1.addExits("south", r3)
     r1.addGrabbable("key")
     r1.addItem("chair", "It is made of wicker and noone is sitting on it.")
-    r1.addItem("Table", "It is made of wood, and a golden key is on the table.")
+    r1.addItem("table", "It is made of wood, and a golden key is on the table.")
 
     r2.addExits("west", r1)
     r2.addExits("south", r4)
     r2.addItem("rug", "It is nice and Indian. It needs to be cleaned.")
-    r2.addItem("fireplace", "Full of ashes and cold.")
-
+    r2.addItem("fireplace", "Full of ashes and cole.")
+    r2.addItem("Secret Door", "Requires a key to unlock.")
 
     r3.addExits("north", r1)
     r3.addExits("east", r4)
@@ -133,10 +133,17 @@ def createRooms():
     r4.addGrabbable("6-pack")
     r4.addItem("brew_rig", "Gourd is brewing some sort of oatmeal"
                                 "stout on the brew rig. A 6-pack is resting beside it.")
+    
+    r5.addExits("South", r2)
+    r5.addGrabbable("CS Degree")
     currentRoom = r1
 createRooms()
 #Start the game!
 inventory = []
+inventory_info = {"key": "A cool looking key that smells a little funky. Might open a secret door.", 
+                  "book": "A book titled 'Twilight.' Never heard of it!", 
+                  "6-pack": "A six-pack of some stout. Nice.", 
+                  "CS Degree": "Can't wait to be a barista!"}
 while True:
     #situational awareness, see what you have
     status = "{}\nYou are carrying: {}\n".format(currentRoom, inventory)
@@ -168,13 +175,13 @@ while True:
             response = "Invalid Exit"
 
             # check for valid exits
-    for i in range(len(currentRoom.exits)):
-        if (noun == currentRoom.exits[i]):
+            for i in range(len(currentRoom.exits)):
+                if (noun == currentRoom.exits[i]):
              ##change the current room to the one that is
             #specified by the exit
-                currentRoom = currentRoom.exitLocations[i]
-                response = "Room changed."
-                break
+                    currentRoom = currentRoom.exitLocations[i]
+                    response = "Room changed."
+                    break
                 #if verb is look
         elif (verb == "look"):
                 #default response
@@ -186,22 +193,43 @@ while True:
                     response = currentRoom.itemDescriptions[i]
                         # no need to check any more items
                     break
+        elif(verb == "use"):
+            response = "You can't use that."
+
+            if noun == "key":
+                if noun in inventory:
+                    if currentRoom.name == "Room 2":
+                        currentRoom.addExits("north", r5)
+                        response = "You use the key to unlock a new location up north!"
+                    else:
+                        response ="There is nothing to use this on here."
+                else:
+                    response = "You do not have the key."
+
         elif (verb == "take"):
                 # default response
-                    response = "I dont see that item."
+            response = "I dont see that item."
                 #check for valid grabbables
-                    for grabbable in currentRoom.grabbables:
+            for grabbable in currentRoom.grabbables:
                     # a valid grabbable is found
-                        if (noun == grabbable):
+                if (noun == grabbable):
                         #add it to inventory
-                            inventory.append(grabbable)
-
+                    inventory.append(grabbable)
                         #remove it from the room
-                            currentRoom.delGrabbable(grabbable)
-                        # set the response (success)
-                            response = "Item grabbed."
-
+                    currentRoom.delGrabbable(grabbable)
+                    response = "Item grabbed."
+                    break
                             #no need to check anymore grabbables
-                            break
-
-    print("\n{}".format(response))
+        elif (verb == "view"):
+            #default response
+            response = "You aren't carrying that item!"
+            
+            #check if item is in inventory
+            if noun in inventory:
+                if noun in inventory_info:
+                    response = inventory_info[noun]
+            else:
+                response = f"You look at the {noun}, but don't notice anything special about it."
+        else:
+            response = "unkown command"
+        print("\n{}".format(response))
