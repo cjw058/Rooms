@@ -64,7 +64,7 @@ class Room:
 
     def __str__(self):
     # first, the room name
-        s = "You are in the {}.\n".format(self.name)
+        s = "You are in {}.\n".format(self.name)
 
     # next, the items in the room
         s += "You see: "
@@ -119,7 +119,7 @@ def createRooms():
     r2.addExits("south", r4)
     r2.addItem("rug", "It is nice and Indian. It needs to be cleaned.")
     r2.addItem("fireplace", "Full of ashes and cole.")
-    r2.addItem("Secret Door", "Requires a key to unlock.")
+    r2.addItem("secretdoor", "Requires a key to unlock.")
 
     r3.addExits("north", r1)
     r3.addExits("east", r4)
@@ -134,19 +134,23 @@ def createRooms():
     r4.addItem("brew_rig", "Gourd is brewing some sort of oatmeal"
                                 "stout on the brew rig. A 6-pack is resting beside it.")
     
-    r5.addExits("South", r2)
-    r5.addGrabbable("CS Degree")
+    r5.addExits("south", r2)
+    r5.addGrabbable("cs_degree")
+    r5.addItem("cs_degree","Great...")
     currentRoom = r1
 createRooms()
 #Start the game!
 inventory = []
+points = 0 #points for the game which can be obtained by finding items
+visitedRooms = [] #list of rooms that have been visited
+
 inventory_info = {"key": "A cool looking key that smells a little funky. Might open a secret door.", 
                   "book": "A book titled 'Twilight.' Never heard of it!", 
                   "6-pack": "A six-pack of some stout. Nice.", 
-                  "CS Degree": "Can't wait to be a barista!"}
+                  "cs_degree": "Can't wait to put the fries in the bag!"}
 while True:
     #situational awareness, see what you have
-    status = "{}\nYou are carrying: {}\n".format(currentRoom, inventory)
+    status = "{}\nYou are carrying: {}\nPoints: {}".format(currentRoom, inventory, points)
     #if current room is None, player is dead.
     if (currentRoom == None):
         death()
@@ -155,6 +159,7 @@ while True:
 
     print("========================================================")
     print(status)
+    print("========================================================")
 
     #if current room is None, player is dead, exit game
     action = input("What to do? ")
@@ -179,9 +184,19 @@ while True:
                 if (noun == currentRoom.exits[i]):
              ##change the current room to the one that is
             #specified by the exit
-                    currentRoom = currentRoom.exitLocations[i]
-                    response = "Room changed."
+                    newRoom = currentRoom.exitLocations[i]
+                    if newRoom is None:
+                        currentRoom = None
+                        break
+                    currentRoom = newRoom
+                    response = "Room changed"
+
+                    if (currentRoom not in visitedRooms):
+                        visitedRooms.append(currentRoom)
+                        points += 5
+                        response = "You have discovered a new room! +5 points"
                     break
+
                 #if verb is look
         elif (verb == "look"):
                 #default response
@@ -200,6 +215,7 @@ while True:
                 if noun in inventory:
                     if currentRoom.name == "Room 2":
                         currentRoom.addExits("north", r5)
+                        points += 25
                         response = "You use the key to unlock a new location up north!"
                     else:
                         response ="There is nothing to use this on here."
@@ -217,7 +233,18 @@ while True:
                     inventory.append(grabbable)
                         #remove it from the room
                     currentRoom.delGrabbable(grabbable)
+                    points += 10
                     response = "Item grabbed."
+                    if grabbable == "key" and currentRoom.name == "Room 1":
+                        for i in range(len(currentRoom.items)):
+                            if currentRoom.items[i] == "table":
+                                currentRoom.itemDescriptions[i] = "It is made of wood. The table looks like its missing something."
+                    elif grabbable == "book" and currentRoom.name == "Room 3":
+                            for i in range(len(currentRoom.items)):
+                                if currentRoom.items[i] == "desk":
+                                    currentRoom.itemDescriptions[i] = "A statue rests upon it. No longer a book."
+                        
+                            #no need to check anymore grabbables
                     break
                             #no need to check anymore grabbables
         elif (verb == "view"):
